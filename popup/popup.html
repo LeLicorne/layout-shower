@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Layout Shower</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <div class="title">
+      <img src="../icons/icon-32.png" alt="" width="20" height="20">
+      <span>Layout Shower</span>
+    </div>
+    <label class="switch" title="Activer / désactiver (Alt+Shift+L)">
+      <input type="checkbox" id="enabled">
+      <span class="slider"></span>
+    </label>
+  </header>
+
+  <section>
+    <h2>Mode</h2>
+    <div class="segmented" role="radiogroup">
+      <label><input type="radio" name="mode" value="hover"><span>Survol</span></label>
+      <label><input type="radio" name="mode" value="all"><span>Tout afficher</span></label>
+    </div>
+  </section>
+
+  <section>
+    <h2>Couches</h2>
+    <label class="layer"><input type="checkbox" data-layer="margin"><i class="dot margin"></i>Margin</label>
+    <label class="layer"><input type="checkbox" data-layer="border"><i class="dot border"></i>Border</label>
+    <label class="layer"><input type="checkbox" data-layer="padding"><i class="dot padding"></i>Padding</label>
+    <label class="layer"><input type="checkbox" data-layer="content"><i class="dot content"></i>Contenu</label>
+  </section>
+
+  <p id="error" class="error" hidden></p>
+
+  <footer>
+    <div><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>L</kbd> activer</div>
+    <div><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>M</kbd> changer de mode</div>
+    <div><kbd>Échap</kbd> désactiver sur la page</div>
+  </footer>
+
+  <script src="popup.js"></script>
+</body>
+</html>

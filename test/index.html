@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <title>Layout Shower — page de test</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 24px; background: #fafafa; }
+    .card { margin: 20px 40px; padding: 16px 24px; border: 4px solid #333; background: #fff; }
+    .row { display: flex; gap: 12px; padding: 10px; border: 1px solid #ccc; }
+    .row > div { flex: 1; padding: 8px; margin: 6px 0; border: 2px dashed #888; background: #eee; }
+    .btn { display: inline-block; padding: 6px 14px; margin: 0 8px 0 0; border: 2px solid #2a6; border-radius: 6px; }
+    .neg { margin-top: -10px; padding: 12px; background: #fde; }
+    .tall { height: 1200px; margin: 30px; padding: 30px; border: 10px solid #ddd; }
+  </style>
+</head>
+<body>
+  <h1>Page de test</h1>
+  <div class="card" id="main">
+    <p>Carte avec margin 20/40, padding 16/24 et border 4px.</p>
+    <a class="btn" href="#">Bouton</a><a class="btn" href="#">Autre</a>
+  </div>
+  <div class="row">
+    <div>Colonne A</div><div>Colonne B</div><div>Colonne C</div>
+  </div>
+  <div class="neg">Margin négative (-10px)</div>
+  <div class="tall">Bloc haut pour tester le scroll</div>
+</body>
+</html>
