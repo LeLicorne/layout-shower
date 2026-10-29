@@ -46,3 +46,6 @@ Ne fonctionne pas sur les pages internes de Firefox (`about:*`), sur addons.mozi
 - `content/overlay.js` : rendu sur un canvas plein écran dans un Shadow DOM, aucun impact sur le style de la page.
 - `test/index.html` : page de test (`python3 -m http.server`, puis activer l'extension dessus).
 - `npx web-ext lint --ignore-files "test/**"`
+
+## Licence
+[MIT](LICENSE)
