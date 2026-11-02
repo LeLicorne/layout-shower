@@ -1,0 +1,38 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Vérifier que le tag correspond au manifest
+        run: |
+          V=$(node -p "require('./manifest.json').version")
+          [ "v$V" = "${GITHUB_REF_NAME}" ] || { echo "Tag ${GITHUB_REF_NAME} != manifest v$V"; exit 1; }
+
+      - name: Lint
+        run: npx --yes web-ext lint --ignore-files "test/**" "web-ext-artifacts/**"
+
+      - name: Signer sur AMO (unlisted)
+        env:
+          WEB_EXT_API_KEY: ${{ secrets.WEB_EXT_API_KEY }}
+          WEB_EXT_API_SECRET: ${{ secrets.WEB_EXT_API_SECRET }}
+        run: npx --yes web-ext sign --channel=unlisted --ignore-files "test/**" "web-ext-artifacts/**"
+
+      - name: Publier la release GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          files: web-ext-artifacts/*.xpi
+          generate_release_notes: true
