@@ -9,6 +9,17 @@ Affiche directement sur la page les **margins**, **borders**, **paddings** et la
 | Padding | vert    |
 | Contenu | bleu    |
 
+### Flex, grid et gaps
+
+| Élément | Couleur | Affichage |
+| ------- | ------- | --------- |
+| Flex    | violet  | contour pointillé du conteneur et des items, flèche = axe principal, badge `flex row wrap` |
+| Grid    | rose    | lignes de pistes, taille de chaque colonne / ligne (survol), badge `grid 3×2` |
+| Gap     | turquoise hachuré | zone du gap avec sa taille en px (flex : entre items et entre lignes ; grid : entre pistes) |
+
+En survol, l'infobulle ajoute `direction · wrap · justify · align`, les `gap` (row / col) et, pour un item flex, `grow · shrink · basis`.
+Chacun s'active séparément dans la section _Mise en page_ du popup.
+
 ## Modes
 
 - **Survol** : l'élément sous la souris est annoté en détail (toutes les valeurs, taille du contenu, infobulle `tag#id.classes  L × H`).
@@ -36,7 +47,7 @@ Les raccourcis se modifient dans `about:addons` → ⚙ → _Gérer les raccourc
 Firefox (version stable) n'installe que les extensions signées :
 
 ```sh
-npx web-ext build --ignore-files "test/**"     # crée web-ext-artifacts/layout_shower-1.0.0.zip
+npx web-ext build --ignore-files "test/**"     # crée web-ext-artifacts/layout_shower-1.1.0.zip
 npx web-ext sign --channel=unlisted --api-key=... --api-secret=...   # signature AMO (clés sur addons.mozilla.org)
 ```
 

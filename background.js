@@ -3,7 +3,15 @@
 
 const DEFAULT_PREFS = {
   mode: "hover",
-  layers: { margin: true, border: true, padding: true, content: true },
+  layers: {
+    margin: true,
+    border: true,
+    padding: true,
+    content: true,
+    flex: true,
+    grid: true,
+    gap: true,
+  },
 };
 
 browser.action.setBadgeBackgroundColor({ color: "#e8883a" });

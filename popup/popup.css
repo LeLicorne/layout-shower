@@ -161,6 +161,19 @@ section {
 .dot.content {
   background: var(--content);
 }
+.dot.flex {
+  background: #a78bfa;
+}
+.dot.grid {
+  background: #ec4899;
+}
+.dot.gap {
+  background: repeating-linear-gradient(
+    45deg,
+    #14b8a6 0 2px,
+    rgba(20, 184, 166, 0.3) 2px 4px
+  );
+}
 
 .error {
   margin: 0 0 12px;

@@ -40,6 +40,44 @@
         padding: 12px;
         background: #fde;
       }
+      .flex-col {
+        display: flex;
+        flex-direction: column-reverse;
+        gap: 14px 24px;
+        width: 220px;
+        height: 200px;
+        padding: 10px;
+        border: 1px solid #a78bfa;
+      }
+      .flex-col > div {
+        background: #ede9fe;
+        padding: 6px;
+      }
+      .wrap {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 20px;
+        justify-content: space-between;
+        padding: 8px;
+        border: 1px solid #a78bfa;
+      }
+      .wrap > div {
+        flex: 1 1 140px;
+        background: #ede9fe;
+        padding: 6px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 100px 1fr 2fr;
+        grid-template-rows: 40px auto;
+        gap: 12px 24px;
+        padding: 10px;
+        border: 1px solid #ec4899;
+      }
+      .grid > div {
+        background: #fce7f3;
+        padding: 6px;
+      }
       .tall {
         height: 1200px;
         margin: 30px;
@@ -58,6 +96,29 @@
       <div>Colonne A</div>
       <div>Colonne B</div>
       <div>Colonne C</div>
+    </div>
+    <h2>Flex</h2>
+    <div class="flex-col">
+      <div>1 (column-reverse)</div>
+      <div>2</div>
+      <div>3</div>
+    </div>
+    <br />
+    <div class="wrap">
+      <div>a</div>
+      <div>b</div>
+      <div>c</div>
+      <div>d</div>
+      <div>e</div>
+    </div>
+    <h2>Grid</h2>
+    <div class="grid">
+      <div>1</div>
+      <div>2</div>
+      <div>3</div>
+      <div>4</div>
+      <div>5</div>
+      <div>6</div>
     </div>
     <div class="neg">Margin négative (-10px)</div>
     <div class="tall">Bloc haut pour tester le scroll</div>
