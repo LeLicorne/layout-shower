@@ -1,14 +1,15 @@
-name: Release
+name: Publish to AMO
 
+# Se déclenche quand une release GitHub est publiée (gh release create / interface web).
 on:
-  push:
-    tags: ["v*"]
+  release:
+    types: [published]
 
 permissions:
   contents: write
 
 jobs:
-  sign:
+  publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,21 +19,27 @@ jobs:
           node-version: 22
 
       - name: Vérifier que le tag correspond au manifest
+        env:
+          TAG: ${{ github.event.release.tag_name }}
         run: |
           V=$(node -p "require('./manifest.json').version")
-          [ "v$V" = "${GITHUB_REF_NAME}" ] || { echo "Tag ${GITHUB_REF_NAME} != manifest v$V"; exit 1; }
+          [ "v$V" = "$TAG" ] || { echo "Tag $TAG != manifest v$V"; exit 1; }
 
       - name: Lint
         run: npx --yes web-ext lint --ignore-files "test/**" "web-ext-artifacts/**"
 
-      - name: Signer sur AMO (unlisted)
+      # Canal listed : la version part en relecture chez Mozilla, puis Firefox met
+      # les utilisateurs à jour automatiquement. --approval-timeout=0 = on n'attend pas la relecture.
+      - name: Envoyer sur AMO (listed)
         env:
           WEB_EXT_API_KEY: ${{ secrets.WEB_EXT_API_KEY }}
           WEB_EXT_API_SECRET: ${{ secrets.WEB_EXT_API_SECRET }}
-        run: npx --yes web-ext sign --channel=unlisted --ignore-files "test/**" "web-ext-artifacts/**"
+        run: npx --yes web-ext sign --channel=listed --approval-timeout=0 --ignore-files "test/**" "web-ext-artifacts/**"
 
-      - name: Publier la release GitHub
-        uses: softprops/action-gh-release@v2
-        with:
-          files: web-ext-artifacts/*.xpi
-          generate_release_notes: true
+      - name: Joindre le zip à la release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          npx --yes web-ext build --ignore-files "test/**" "web-ext-artifacts/**" --overwrite-dest
+          gh release upload "$TAG" web-ext-artifacts/*.zip --clobber

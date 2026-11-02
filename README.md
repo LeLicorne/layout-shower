@@ -47,7 +47,7 @@ Les raccourcis se modifient dans `about:addons` → ⚙ → _Gérer les raccourc
 Firefox (version stable) n'installe que les extensions signées :
 
 ```sh
-npx web-ext build --ignore-files "test/**"     # crée web-ext-artifacts/layout_shower-1.1.0.zip
+npx web-ext build --ignore-files "test/**"     # crée web-ext-artifacts/layout_shower-1.1.1.zip
 npx web-ext sign --channel=unlisted --api-key=... --api-secret=...   # signature AMO (clés sur addons.mozilla.org)
 ```
 
