@@ -1,45 +1,134 @@
-name: Publish to AMO
+name: Release
 
-# Se déclenche quand une release GitHub est publiée (gh release create / interface web).
+# Push sur main : release-please ouvre / met à jour la PR de release.
+# Quand cette PR est fusionnée, il crée le tag + la GitHub Release, puis les jobs
+# suivants construisent et publient sur AMO (Firefox) et le Chrome Web Store.
+# workflow_dispatch : republier manuellement un tag existant (ex. un store a échoué).
 on:
-  release:
-    types: [published]
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag à (re)publier, ex. v1.2.0"
+        required: true
+      target:
+        description: "Où publier"
+        type: choice
+        options: [both, firefox, chrome]
+        default: both
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
-  publish:
+  release-please:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.rp.outputs.release_created }}
+      tag_name: ${{ steps.rp.outputs.tag_name }}
     steps:
-      - uses: actions/checkout@v4
+      - id: rp
+        uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
 
+  build:
+    needs: release-please
+    # Exécuté si release-please a créé une release, ou en lancement manuel.
+    if: always() && (needs.release-please.outputs.release_created == 'true' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - id: tag
+        run: echo "tag=${{ github.event.inputs.tag || needs.release-please.outputs.tag_name }}" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.tag.outputs.tag }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-
+          cache: npm
+      - run: npm ci
       - name: Vérifier que le tag correspond au manifest
         env:
-          TAG: ${{ github.event.release.tag_name }}
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
           V=$(node -p "require('./manifest.json').version")
           [ "v$V" = "$TAG" ] || { echo "Tag $TAG != manifest v$V"; exit 1; }
+      - run: npm run build
+      - run: npm run check
+      - run: npx web-ext lint -s dist/firefox
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-build
+          path: |
+            web-ext-artifacts/*.zip
+            dist/firefox/**
+          retention-days: 30
 
-      - name: Lint
-        run: npx --yes web-ext lint --ignore-files "test/**" "web-ext-artifacts/**"
+  attach-assets:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-build
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.build.outputs.tag }}
+        run: gh release upload "$TAG" web-ext-artifacts/*.zip --clobber --repo "$GITHUB_REPOSITORY"
 
-      # Canal listed : la version part en relecture chez Mozilla, puis Firefox met
-      # les utilisateurs à jour automatiquement. --approval-timeout=0 = on n'attend pas la relecture.
+  publish-amo:
+    needs: build
+    if: github.event_name == 'push' || github.event.inputs.target != 'chrome'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-build
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Canal listed : relecture Mozilla, puis mise à jour automatique des utilisateurs.
+      # --approval-timeout=0 : on n'attend pas la fin de la relecture.
       - name: Envoyer sur AMO (listed)
         env:
           WEB_EXT_API_KEY: ${{ secrets.WEB_EXT_API_KEY }}
           WEB_EXT_API_SECRET: ${{ secrets.WEB_EXT_API_SECRET }}
-        run: npx --yes web-ext sign --channel=listed --approval-timeout=0 --ignore-files "test/**" "web-ext-artifacts/**"
+        run: npx --yes web-ext sign --channel=listed --approval-timeout=0 -s dist/firefox
 
-      - name: Joindre le zip à la release
+  publish-chrome:
+    needs: build
+    if: github.event_name == 'push' || github.event.inputs.target != 'firefox'
+    runs-on: ubuntu-latest
+    env:
+      # Publication Chrome optionnelle : ignorée tant que le secret n'est pas configuré.
+      CHROME_CONFIGURED: ${{ secrets.CHROME_EXTENSION_ID != '' }}
+    steps:
+      - name: Chrome Web Store non configuré (étape ignorée)
+        if: env.CHROME_CONFIGURED != 'true'
+        run: 'echo "::notice::Secrets CHROME_* absents, publication Chrome ignoree."'
+      - uses: actions/download-artifact@v4
+        if: env.CHROME_CONFIGURED == 'true'
+        with:
+          name: release-build
+      - uses: actions/setup-node@v4
+        if: env.CHROME_CONFIGURED == 'true'
+        with:
+          node-version: 22
+      - name: Envoyer sur le Chrome Web Store
+        if: env.CHROME_CONFIGURED == 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.event.release.tag_name }}
+          EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+          CLIENT_ID: ${{ secrets.CHROME_CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CHROME_CLIENT_SECRET }}
+          REFRESH_TOKEN: ${{ secrets.CHROME_REFRESH_TOKEN }}
         run: |
-          npx --yes web-ext build --ignore-files "test/**" "web-ext-artifacts/**" --overwrite-dest
-          gh release upload "$TAG" web-ext-artifacts/*.zip --clobber
+          npx --yes chrome-webstore-upload-cli@3 upload \
+            --source web-ext-artifacts/layout_shower-*-chrome.zip \
+            --auto-publish

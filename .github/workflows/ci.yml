@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches-ignore: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run check
+      - name: Lint Firefox (bloquant)
+        run: npx web-ext lint -s dist/firefox
+      - name: Lint Chrome (informatif, les notices gecko sont attendues)
+        run: npx web-ext lint -s dist/chrome
+        continue-on-error: true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: extension-zips
+          path: web-ext-artifacts/*.zip
