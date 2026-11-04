@@ -78,6 +78,7 @@
   let placed = [];
   let gapPat = null;
 
+  globalThis.browser ??= globalThis.chrome;
   const rt =
     typeof browser !== "undefined" &&
     browser.runtime &&
@@ -1059,12 +1060,17 @@
   window.__layoutShower = { set: apply, get: snapshot };
 
   if (rt) {
-    rt.runtime.onMessage.addListener((msg) => {
-      if (!msg) return undefined;
-      if (msg.type === "ls:ping") return Promise.resolve({ state: snapshot() });
-      if (msg.type === "ls:set")
-        return Promise.resolve({ state: apply(msg.state) });
-      return undefined;
+    rt.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+      if (!msg) return false;
+      if (msg.type === "ls:ping") {
+        sendResponse({ state: snapshot() });
+        return true;
+      }
+      if (msg.type === "ls:set") {
+        sendResponse({ state: apply(msg.state) });
+        return true;
+      }
+      return false;
     });
   }
 })();

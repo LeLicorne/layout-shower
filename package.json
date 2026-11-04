@@ -1,0 +1,14 @@
+{
+  "name": "layout-shower",
+  "version": "1.1.1",
+  "private": true,
+  "description": "Layout Shower — extension Firefox & Chrome",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "check": "node scripts/check.mjs",
+    "lint": "web-ext lint -s dist/firefox && web-ext lint -s dist/chrome || true"
+  },
+  "devDependencies": {
+    "web-ext": "^8.3.0"
+  }
+}

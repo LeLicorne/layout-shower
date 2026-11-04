@@ -1,11 +1,20 @@
 "use strict";
 
+globalThis.browser ??= globalThis.chrome;
+
 const enabledInput = document.getElementById("enabled");
 const modeInputs = [...document.querySelectorAll('input[name="mode"]')];
 const layerInputs = [...document.querySelectorAll("input[data-layer]")];
 const errorBox = document.getElementById("error");
 
 let tabId = null;
+
+// Les erreurs du background arrivent sous forme { error } (voir background.js).
+async function send(msg) {
+  const res = await browser.runtime.sendMessage(msg);
+  if (res && res.error) throw new Error(res.error);
+  return res;
+}
 
 function render(prefs, enabled) {
   enabledInput.checked = enabled;
@@ -17,14 +26,14 @@ function render(prefs, enabled) {
 function showError(err) {
   console.warn("[Layout Shower]", err);
   errorBox.textContent =
-    "Impossible d'agir sur cette page (pages internes de Firefox, addons.mozilla.org, lecteur PDF…).";
+    "Impossible d'agir sur cette page (pages internes du navigateur, boutiques d'extensions, lecteur PDF…).";
   errorBox.hidden = false;
 }
 
 async function init() {
   const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
   tabId = tab ? tab.id : null;
-  const { prefs, state } = await browser.runtime.sendMessage({
+  const { prefs, state } = await send({
     type: "popup:get",
     tabId,
   });
@@ -34,7 +43,7 @@ async function init() {
 enabledInput.addEventListener("change", async () => {
   errorBox.hidden = true;
   try {
-    const state = await browser.runtime.sendMessage({
+    const state = await send({
       type: "popup:toggle",
       tabId,
       enabled: enabledInput.checked,
@@ -48,19 +57,19 @@ enabledInput.addEventListener("change", async () => {
 
 for (const input of modeInputs) {
   input.addEventListener("change", () => {
-    browser.runtime.sendMessage({
+    send({
       type: "popup:prefs",
       prefs: { mode: input.value },
-    });
+    }).catch(showError);
   });
 }
 
 for (const input of layerInputs) {
   input.addEventListener("change", () => {
-    browser.runtime.sendMessage({
+    send({
       type: "popup:prefs",
       prefs: { layers: { [input.dataset.layer]: input.checked } },
-    });
+    }).catch(showError);
   });
 }
 

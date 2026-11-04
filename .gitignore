@@ -1,3 +1,5 @@
 .amo-upload-uuid
 web-ext-artifacts/
 .playwright-mcp/
+dist/
+node_modules/

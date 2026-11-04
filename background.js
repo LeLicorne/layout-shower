@@ -1,6 +1,9 @@
 // Layout Shower — script d'arrière-plan : injection, état par onglet, badge, raccourcis.
 "use strict";
 
+// Chrome n'expose que `chrome` (Firefox définit déjà `browser`).
+globalThis.browser ??= globalThis.chrome;
+
 const DEFAULT_PREFS = {
   mode: "hover",
   layers: {
@@ -88,23 +91,33 @@ async function activeTab() {
   return tab;
 }
 
-browser.runtime.onMessage.addListener((msg, sender) => {
-  if (!msg) return undefined;
+// Réponse via sendResponse + `return true` : fonctionne sous Chrome et Firefox
+// (Chrome ignore une Promise retournée par le listener).
+browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (!msg) return false;
+  let result;
   switch (msg.type) {
     case "popup:get":
-      return Promise.all([getPrefs(), getTabState(msg.tabId)]).then(
+      result = Promise.all([getPrefs(), getTabState(msg.tabId)]).then(
         ([prefs, state]) => ({ prefs, state }),
       );
+      break;
     case "popup:toggle":
-      return setEnabled(msg.tabId, msg.enabled);
+      result = setEnabled(msg.tabId, msg.enabled);
+      break;
     case "popup:prefs":
-      return savePrefs(msg.prefs);
+      result = savePrefs(msg.prefs);
+      break;
     case "ls:disabled":
       if (sender.tab) setBadge(sender.tab.id, false);
-      return undefined;
+      return false;
     default:
-      return undefined;
+      return false;
   }
+  result.then(sendResponse, (err) =>
+    sendResponse({ error: String((err && err.message) || err) }),
+  );
+  return true;
 });
 
 browser.commands.onCommand.addListener(async (command, tab) => {
