@@ -23,6 +23,7 @@ Chacun s'active séparément dans la section _Mise en page_ du popup.
 ## Modes
 
 - **Survol** : l'élément sous la souris est annoté en détail (toutes les valeurs, taille du contenu, infobulle `tag#id.classes  L × H`).
+- **Épingler** (mode Survol) : un clic sur un élément le garde affiché (contour pointillé bleu + 📌 dans l'infobulle) et le survol est suspendu tant qu'il est épinglé : tu peux bouger la souris sans perdre ses infos. Re-cliquer dessus ou `Échap` le détache. Le clic n'est pas bloqué : les liens et boutons réagissent normalement.
 - **Tout afficher** : tous les éléments visibles sont colorés ; les valeurs ≥ 4 px sont étiquetées (les étiquettes qui se chevauchent sont masquées pour rester lisible).
 
 ## Utilisation
@@ -30,7 +31,7 @@ Chacun s'active séparément dans la section _Mise en page_ du popup.
 - Clic sur l'icône de la barre d'outils → interrupteur, choix du mode, couches à afficher.
 - `Alt+Shift+L` : activer / désactiver sur l'onglet courant.
 - `Alt+Shift+M` : basculer Survol ⇄ Tout afficher.
-- `Échap` : désactiver sur la page.
+- `Échap` : détacher l'élément épinglé, puis désactiver sur la page.
 - Le badge **ON** indique que l'overlay est actif dans l'onglet. Il se désactive au rechargement de la page.
 
 Les raccourcis se modifient dans `about:addons` → ⚙ → _Gérer les raccourcis d'extensions_.
@@ -47,7 +48,7 @@ Les raccourcis se modifient dans `about:addons` → ⚙ → _Gérer les raccourc
 Firefox (version stable) n'installe que les extensions signées :
 
 ```sh
-npx web-ext build --ignore-files "test/**"     # crée web-ext-artifacts/layout_shower-1.1.1.zip
+npx web-ext build --ignore-files "test/**"     # crée web-ext-artifacts/layout_shower-1.2.0.zip
 npx web-ext sign --channel=unlisted --api-key=... --api-secret=...   # signature AMO (clés sur addons.mozilla.org)
 ```
 

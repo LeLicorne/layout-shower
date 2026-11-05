@@ -21,6 +21,8 @@
     grid: "#f58cc0",
     gap: "#5fd0c4",
   };
+  // Élément épinglé (clic) : contour et infobulle distincts du survol.
+  const PIN = { line: "#38bdf8", text: "#7dd3fc" };
   // Position relative des étiquettes le long d'un côté, pour que les couches ne se superposent pas.
   const STAGGER = { margin: 0.2, border: 0.5, padding: 0.8 };
   const ALPHA = {
@@ -74,6 +76,7 @@
   let rafId = 0;
   let mouse = null;
   let hovered = null;
+  let pinned = null;
   let observer = null;
   let placed = [];
   let gapPat = null;
@@ -116,6 +119,7 @@
       capture: true,
       passive: true,
     });
+    window.addEventListener("click", onClick, true);
     window.addEventListener("keydown", onKeyDown, true);
     observer = new MutationObserver(onMutation);
     observer.observe(document.documentElement, {
@@ -131,6 +135,7 @@
     window.removeEventListener("scroll", onScroll, { capture: true });
     window.removeEventListener("resize", onResize);
     window.removeEventListener("mousemove", onMouseMove, { capture: true });
+    window.removeEventListener("click", onClick, true);
     window.removeEventListener("keydown", onKeyDown, true);
     if (observer) observer.disconnect();
     observer = null;
@@ -140,6 +145,7 @@
     host = canvas = ctx = null;
     gapPat = null;
     hovered = null;
+    pinned = null;
     metricsCache = new WeakMap();
   }
 
@@ -202,8 +208,24 @@
     if (state.mode === "hover") pick();
   }
 
+  // Clic en mode Survol : épingle l'élément (re-clic dessus = on le détache).
+  // Le clic n'est pas bloqué : la page réagit normalement.
+  function onClick(e) {
+    if (state.mode !== "hover" || !e.isTrusted) return;
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const target = el && el !== host ? el : null;
+    pinned = target && target !== pinned ? target : null;
+    schedule();
+  }
+
   function onKeyDown(e) {
     if (e.key !== "Escape" || !state.enabled) return;
+    // Premier Échap : détache l'élément épinglé ; le suivant désactive.
+    if (pinned) {
+      pinned = null;
+      schedule();
+      return;
+    }
     apply({ enabled: false });
     if (rt) rt.runtime.sendMessage({ type: "ls:disabled" }).catch(() => {});
   }
@@ -355,9 +377,16 @@
     else drawHover();
   }
 
+  // Tant qu'un élément est épinglé, il remplace le survol : on ne dessine que lui.
   function drawHover() {
     if (hovered && !hovered.isConnected) hovered = null;
-    const it = hovered && measure(hovered);
+    if (pinned && !pinned.isConnected) pinned = null;
+    if (pinned) drawElement(pinned, true);
+    else if (hovered) drawElement(hovered, false);
+  }
+
+  function drawElement(el, isPinned) {
+    const it = measure(el);
     if (!it) return;
     const alpha = ALPHA.hover;
     const { box } = it;
@@ -407,7 +436,18 @@
 
     const info = drawLayout(it, labels, true);
     renderLabels(labels);
-    drawTooltip(it, outerMost, info);
+    if (isPinned) drawPinOutline(outerMost);
+    drawTooltip(it, outerMost, info, isPinned);
+  }
+
+  // Contour pointillé blanc/bleu autour de l'élément épinglé : le distingue du simple survol.
+  function drawPinOutline(b) {
+    ctx.save();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = PIN.line;
+    ctx.setLineDash([6, 4]);
+    ctx.strokeRect(b.l - 1, b.t - 1, b.r - b.l + 2, b.b - b.t + 2);
+    ctx.restore();
   }
 
   function drawAll() {
@@ -952,8 +992,9 @@
     ctx.fillText(text, rect.l + 11, rect.t + LABEL_H / 2 + 0.5);
   }
 
-  function drawTooltip(it, outerMost, extra = []) {
+  function drawTooltip(it, outerMost, extra = [], isPinned = false) {
     const first = selectorParts(it.el);
+    if (isPinned) first.unshift({ text: "📌 ", color: PIN.text });
     first.push({
       text: `  ${fmt(it.rect.width)} × ${fmt(it.rect.height)}`,
       color: TIP.text,
@@ -977,6 +1018,11 @@
     roundRect(x, y, w, h, 4);
     ctx.fillStyle = "rgba(17,17,17,0.95)";
     ctx.fill();
+    if (isPinned) {
+      ctx.strokeStyle = PIN.line;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
     ctx.save();
     ctx.beginPath();
     ctx.rect(x, y, w, h);
